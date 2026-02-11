@@ -1,0 +1,180 @@
+{
+  "name": "高德地图",
+  "description": "使用高德地图API进行位置服务查询，包括地点搜索、路径规划、天气查询等功能",
+  "version": "1.0.0",
+  "author": "OpenClaw Assistant",
+  "skills": [
+    {
+      "id": "amap_place_search",
+      "name": "高德地点搜索",
+      "description": "根据关键词搜索地点信息",
+      "category": "location",
+      "tools": [
+        {
+          "name": "amap_keyword_search",
+          "description": "根据关键词搜索地点",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "keywords": {
+                "type": "string",
+                "description": "搜索关键词"
+              },
+              "city": {
+                "type": "string",
+                "description": "查询城市，可选"
+              }
+            },
+            "required": ["keywords"]
+          }
+        },
+        {
+          "name": "amap_nearby_search",
+          "description": "搜索附近地点",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "keywords": {
+                "type": "string",
+                "description": "搜索关键词"
+              },
+              "location": {
+                "type": "string",
+                "description": "中心点坐标，格式：经度,纬度"
+              },
+              "radius": {
+                "type": "integer",
+                "description": "搜索半径，单位米，默认1000"
+              }
+            },
+            "required": ["keywords", "location"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "amap_navigation",
+      "name": "高德导航",
+      "description": "提供路径规划服务，包括驾车、步行、骑行等",
+      "category": "navigation",
+      "tools": [
+        {
+          "name": "amap_driving_route",
+          "description": "驾车路径规划",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "origin": {
+                "type": "string",
+                "description": "起点坐标，格式：经度,纬度"
+              },
+              "destination": {
+                "type": "string",
+                "description": "终点坐标，格式：经度,纬度"
+              }
+            },
+            "required": ["origin", "destination"]
+          }
+        },
+        {
+          "name": "amap_walking_route",
+          "description": "步行路径规划",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "origin": {
+                "type": "string",
+                "description": "起点坐标，格式：经度,纬度"
+              },
+              "destination": {
+                "type": "string",
+                "description": "终点坐标，格式：经度,纬度"
+              }
+            },
+            "required": ["origin", "destination"]
+          }
+        },
+        {
+          "name": "amap_cycling_route",
+          "description": "骑行路径规划",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "origin": {
+                "type": "string",
+                "description": "起点坐标，格式：经度,纬度"
+              },
+              "destination": {
+                "type": "string",
+                "description": "终点坐标，格式：经度,纬度"
+              }
+            },
+            "required": ["origin", "destination"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "amap_weather",
+      "name": "高德天气",
+      "description": "查询指定城市的天气信息",
+      "category": "weather",
+      "tools": [
+        {
+          "name": "amap_weather_query",
+          "description": "查询城市天气",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": "string",
+                "description": "城市名称或adcode"
+              }
+            },
+            "required": ["city"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "amap_geocoding",
+      "name": "高德地理编码",
+      "description": "提供地理编码和逆地理编码服务",
+      "category": "geocoding",
+      "tools": [
+        {
+          "name": "amap_geo_code",
+          "description": "地址转坐标",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "address": {
+                "type": "string",
+                "description": "详细地址"
+              },
+              "city": {
+                "type": "string",
+                "description": "城市信息，可选"
+              }
+            },
+            "required": ["address"]
+          }
+        },
+        {
+          "name": "amap_reverse_geo_code",
+          "description": "坐标转地址",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "type": "string",
+                "description": "坐标，格式：经度,纬度"
+              }
+            },
+            "required": ["location"]
+          }
+        }
+      ]
+    }
+  ]
+}

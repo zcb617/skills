@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-02-09T09:00:12.583568",
+  "available_updates": 3,
+  "packages": [
+    {
+      "name": "gir1.2-soup-3.0",
+      "current_version": "3.4.4-5ubuntu0.7"
+    },
+    {
+      "name": "libsoup-3.0-0",
+      "current_version": "3.4.4-5ubuntu0.7"
+    },
+    {
+      "name": "libsoup-3.0-common",
+      "current_version": "3.4.4-5ubuntu0.7"
+    }
+  ],
+  "status": "updates_available"
+}
