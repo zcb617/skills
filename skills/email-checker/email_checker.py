@@ -20,27 +20,40 @@ class EmailChecker:
         else:
             raise FileNotFoundError(f"配置文件不存在: {config_file}")
         
-        # IMAP服务器信息
-        self.imap_server = "imap.0573zzz.com"
-        self.imap_port = 993  # SSL端口
+        # IMAP服务器信息（从配置文件加载）
+        self.imap_server = self.config.get('imap_server', 'localhost')
+        self.imap_port = self.config.get('imap_port', 993)
+        
+        # 通知设置（从配置文件加载）
+        self.notify_channels = self.config.get('notify_channels', ['WhatsApp'])
+        self.notify_targets = self.config.get('notify_targets', ['+8618605738770'])
         
         # 存储已检查的邮件ID，用于检测新邮件
         self.checked_emails_file = "/home/zhangcb/.openclaw/workspace/email-checker/checked_emails.json"
         self.checked_emails = self.load_checked_emails()
     
     def load_credentials(self, config_file):
-        """从配置文件加载邮箱凭据"""
+        """从配置文件加载邮箱凭据和配置"""
         with open(config_file, 'r', encoding='utf-8') as f:
             lines = f.readlines()
-            self.username = None
-            self.password = None
+            self.config = {}
             
             for line in lines:
                 line = line.strip()
                 if line.startswith('account='):
                     self.username = line.split('=', 1)[1]
+                    self.config['account'] = self.username
                 elif line.startswith('passwd='):
                     self.password = line.split('=', 1)[1]
+                    self.config['passwd'] = self.password
+                elif line.startswith('imap_server='):
+                    self.config['imap_server'] = line.split('=', 1)[1]
+                elif line.startswith('imap_port='):
+                    self.config['imap_port'] = int(line.split('=', 1)[1])
+                elif line.startswith('notify_channels='):
+                    self.config['notify_channels'] = line.split('=', 1)[1].split(',')
+                elif line.startswith('notify_targets='):
+                    self.config['notify_targets'] = line.split('=', 1)[1].split(',')
     
     def load_checked_emails(self):
         """加载已检查的邮件ID"""
@@ -162,7 +175,7 @@ class EmailChecker:
                 pass
     
     def send_notification(self, emails):
-        """发送邮件通知到钉钉和WhatsApp"""
+        """发送邮件通知到配置的渠道和对象"""
         if not emails:
             return
         
@@ -178,33 +191,20 @@ class EmailChecker:
         
         print(f"准备发送邮件通知:\\n{message[:500]}...")  # 只打印前500个字符
         
-        # 发送钉钉通知
-        try:
-            cmd_dingtalk = [
-                "bash", "-c",
-                f'source /etc/profile && source /home/zhangcb/.nvm/nvm.sh && cd /home/zhangcb/.nvm/versions/node/v24.13.0/lib/node_modules/openclaw && openclaw message send --channel dingtalk --target "小张同学" --message "{message[:2000]}"'  # 限制消息长度
-            ]
-            result_dingtalk = subprocess.run(cmd_dingtalk, capture_output=True, text=True, timeout=30)
-            if result_dingtalk.returncode == 0:
-                print("钉钉邮件通知发送成功")
-            else:
-                print(f"钉钉邮件通知发送失败: {result_dingtalk.stderr}")
-        except Exception as e:
-            print(f"发送钉钉邮件通知时出错: {str(e)}")
-        
-        # 发送WhatsApp通知
-        try:
-            cmd_whatsapp = [
-                "bash", "-c",
-                f'source /etc/profile && source /home/zhangcb/.nvm/nvm.sh && cd /home/zhangcb/.nvm/versions/node/v24.13.0/lib/node_modules/openclaw && openclaw message send --channel whatsapp --target "+8618605738770" --message "{message[:2000]}"'  # 限制消息长度
-            ]
-            result_whatsapp = subprocess.run(cmd_whatsapp, capture_output=True, text=True, timeout=30)
-            if result_whatsapp.returncode == 0:
-                print("WhatsApp邮件通知发送成功")
-            else:
-                print(f"WhatsApp邮件通知发送失败: {result_whatsapp.stderr}")
-        except Exception as e:
-            print(f"发送WhatsApp邮件通知时出错: {str(e)}")
+        # 根据配置发送通知
+        for channel, target in zip(self.notify_channels, self.notify_targets):
+            try:
+                cmd = [
+                    "bash", "-c",
+                    f'source /etc/profile && source /home/zhangcb/.nvm/nvm.sh && cd /home/zhangcb/.nvm/versions/node/v24.13.0/lib/node_modules/openclaw && openclaw message send --channel {channel.strip()} --target "{target.strip()}" --message "{message[:2000]}"'  # 限制消息长度
+                ]
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                if result.returncode == 0:
+                    print(f"{channel}邮件通知发送成功")
+                else:
+                    print(f"{channel}邮件通知发送失败: {result.stderr}")
+            except Exception as e:
+                print(f"发送{channel}邮件通知时出错: {str(e)}")
     
     def check_new_emails(self):
         """检查新邮件"""
@@ -235,7 +235,9 @@ class EmailChecker:
 def main():
     """主函数"""
     try:
-        checker = EmailChecker("/home/zhangcb/.zhangchenbin@0573zzz.com")
+        # 使用默认配置文件路径
+        config_file = os.path.expanduser("~/.email_checker_config")
+        checker = EmailChecker(config_file)
         checker.check_new_emails()
     except Exception as e:
         print(f"邮件检查器执行出错: {str(e)}")

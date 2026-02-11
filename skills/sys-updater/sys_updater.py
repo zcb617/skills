@@ -13,9 +13,19 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 class SysUpdater:
-    def __init__(self):
+    def __init__(self, config_file=None):
         self.update_log_file = "/home/zhangcb/.openclaw/workspace/sys-updater/update_log.json"
         self.last_check_file = "/home/zhangcb/.openclaw/workspace/sys-updater/last_check.json"
+        
+        # 加载配置文件
+        self.config = {}
+        if config_file and os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                self.config = json.load(f)
+        
+        # 通知设置
+        self.notify_channels = self.config.get('notify_channels', ['DingTalk'])
+        self.notify_targets = self.config.get('notify_targets', ['小张同学'])
         
     def run_command(self, command):
         """执行系统命令"""
@@ -82,35 +92,21 @@ class SysUpdater:
         return summary
     
     def send_notification(self, message):
-        """发送通知"""
-        # 通过 OpenClaw 发送通知到钉钉和 WhatsApp
-        try:
-            # 发送钉钉通知
-            cmd_dingtalk = [
-                "bash", "-c",
-                f'source /etc/profile && source /home/zhangcb/.nvm/nvm.sh && cd /home/zhangcb/.nvm/versions/node/v24.13.0/lib/node_modules/openclaw && openclaw message send --channel dingtalk --target "小张同学" --message "{message}"'
-            ]
-            result_dingtalk = subprocess.run(cmd_dingtalk, capture_output=True, text=True, timeout=30)
-            if result_dingtalk.returncode == 0:
-                print("钉钉通知发送成功")
-            else:
-                print(f"钉钉通知发送失败: {result_dingtalk.stderr}")
-        except Exception as e:
-            print(f"发送钉钉通知时出错: {str(e)}")
-        
-        # 发送WhatsApp通知
-        try:
-            cmd_whatsapp = [
-                "bash", "-c",
-                f'source /etc/profile && source /home/zhangcb/.nvm/nvm.sh && cd /home/zhangcb/.nvm/versions/node/v24.13.0/lib/node_modules/openclaw && openclaw message send --channel whatsapp --target "+8618605738770" --message "{message}"'
-            ]
-            result_whatsapp = subprocess.run(cmd_whatsapp, capture_output=True, text=True, timeout=30)
-            if result_whatsapp.returncode == 0:
-                print("WhatsApp通知发送成功")
-            else:
-                print(f"WhatsApp通知发送失败: {result_whatsapp.stderr}")
-        except Exception as e:
-            print(f"发送WhatsApp通知时出错: {str(e)}")
+        """发送通知到配置的渠道和对象"""
+        # 通过 OpenClaw 发送通知
+        for channel, target in zip(self.notify_channels, self.notify_targets):
+            try:
+                cmd = [
+                    "bash", "-c",
+                    f'source /etc/profile && source /home/zhangcb/.nvm/nvm.sh && cd /home/zhangcb/.nvm/versions/node/v24.13.0/lib/node_modules/openclaw && openclaw message send --channel {channel.strip()} --target "{target.strip()}" --message "{message}"'
+                ]
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                if result.returncode == 0:
+                    print(f"{channel}通知发送成功")
+                else:
+                    print(f"{channel}通知发送失败: {result.stderr}")
+            except Exception as e:
+                print(f"发送{channel}通知时出错: {str(e)}")
     
     def backup_and_update(self):
         """备份并执行系统更新"""
@@ -170,7 +166,9 @@ class SysUpdater:
 
 
 def main():
-    updater = SysUpdater()
+    # 使用默认配置文件路径
+    config_file = os.path.expanduser("~/.sys_updater_config.json")
+    updater = SysUpdater(config_file)
     # 只运行检查，不执行更新
     updater.run_check_only()
 
